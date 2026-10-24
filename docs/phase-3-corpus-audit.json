@@ -1,0 +1,74 @@
+{
+  "human_records": 862,
+  "ai_records": 811,
+  "pairs": 811,
+  "human_journals": 38,
+  "pair_journals": 38,
+  "languages": {
+    "all": {
+      "es": 1673
+    },
+    "human": {
+      "es": 862
+    },
+    "ai": {
+      "es": 811
+    }
+  },
+  "word_stats": {
+    "human": {
+      "min": 91,
+      "p25": 127,
+      "median": 163,
+      "p75": 202,
+      "max": 407,
+      "mean": 170.8
+    },
+    "ai": {
+      "min": 90,
+      "p25": 124,
+      "median": 146,
+      "p75": 185,
+      "max": 264,
+      "mean": 156.9
+    }
+  },
+  "licenses": {
+    "CC BY": 267,
+    "CC BY-NC-SA": 214,
+    "CC BY-NC": 247,
+    "CC BY-SA": 134
+  },
+  "generators": {
+    "Qwen/Qwen2.5-1.5B-Instruct-GGUF:q4_k_m": 811
+  },
+  "splits": {
+    "pairs": {
+      "train": 402,
+      "calib": 107,
+      "threshold": 91,
+      "test": 211
+    },
+    "journals": {
+      "train": 29,
+      "calib": 24,
+      "threshold": 24,
+      "test": 8
+    }
+  },
+  "duplicates": {
+    "normalized_texts_repeated": 0,
+    "ai_pairs_with_duplicates": 0,
+    "orphan_ai": 0
+  },
+  "leakage": {
+    "shingle_size": 13,
+    "max_pair_containment": 0.0,
+    "pairs_over_threshold": 0,
+    "threshold": 0.2,
+    "ai_texts_starting_with_title": 0
+  },
+  "artifacts": {},
+  "human_artifacts": {},
+  "problems": []
+}

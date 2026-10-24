@@ -1,0 +1,9 @@
+# Dependencias solo para construir el corpus y entrenar el detector.
+# El servicio en producción no necesita torch ni transformers.
+torch==2.14.1
+transformers==5.20.2
+accelerate==1.15.0
+scikit-learn==1.9.1
+joblib==1.6.0
+langid==1.1.6
+httpx==0.28.1

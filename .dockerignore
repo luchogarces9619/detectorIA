@@ -1,0 +1,17 @@
+.git
+.env
+**/.env
+src/vendor
+src/node_modules
+src/public/build
+src/storage/app/private
+src/storage/framework
+src/storage/logs
+src/database/*.sqlite
+src/database/*.sqlite-journal
+ai-service
+scripts
+docs
+README.md
+.gitattributes
+.gitignore

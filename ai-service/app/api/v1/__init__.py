@@ -1,0 +1,1 @@
+# API interna v1.
