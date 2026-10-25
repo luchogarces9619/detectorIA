@@ -43,4 +43,14 @@ class SegmentPrediction extends Model
     {
         return $this->belongsTo(ModelVersion::class);
     }
+
+    public function badgeTone(): string
+    {
+        return match ($this->label->value) {
+            'human' => 'success',
+            'ai' => 'danger',
+            'mixed' => 'warning',
+            default => 'neutral',
+        };
+    }
 }

@@ -7,6 +7,13 @@
     @endif
 
     <section class="card">
+        <div class="card-header flex items-center justify-between">
+            <div>
+                <h2 class="text-sm font-semibold text-navy-950">Administración de Usuarios</h2>
+                <p class="mt-0.5 text-xs text-slate-500">Crear usuarios, gestionar roles y suscripciones</p>
+            </div>
+            <button wire:click="openCreateModal" class="btn-primary">+ Crear usuario</button>
+        </div>
         <div class="card-body border-b border-slate-100">
             <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_11rem_11rem]">
                 <div>

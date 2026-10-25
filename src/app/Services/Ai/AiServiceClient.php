@@ -48,6 +48,81 @@ class AiServiceClient
         );
     }
 
+    /**
+     * Envía segmentos de texto al microservicio de detección de IA.
+     *
+     * @param  array<array{text: string, segment_id: string}>  $segments
+     * @return array<string, mixed>
+     */
+    public function detectText(array $segments, ?string $documentId = null): array
+    {
+        return $this->request(
+            'POST',
+            '/internal/v1/detect',
+            [
+                'json' => [
+                    'segments' => array_column($segments, 'text'),
+                    'document_id' => $documentId,
+                ],
+            ],
+            (int) config('services.scitrace_ai.detection_timeout', 60),
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function llmComplete(string $prompt, ?string $systemPrompt = null, float $temperature = 0.3, int $maxTokens = 1024): array
+    {
+        return $this->request(
+            'POST',
+            '/internal/v1/llm/complete',
+            [
+                'json' => [
+                    'prompt' => $prompt,
+                    'system_prompt' => $systemPrompt,
+                    'temperature' => $temperature,
+                    'max_tokens' => $maxTokens,
+                ],
+            ],
+            (int) config('services.scitrace_ai.llm_timeout', 60),
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function llmCapabilities(): array
+    {
+        return $this->request('GET', '/internal/v1/llm/capabilities');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function plagiarismDetect(string $text, array $segments = []): array
+    {
+        return $this->request(
+            'POST',
+            '/internal/v1/plagiarism/detect',
+            [
+                'json' => [
+                    'text' => $text,
+                    'segments' => $segments,
+                ],
+            ],
+            (int) config('services.scitrace_ai.timeout', 30),
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function plagiarismCapabilities(): array
+    {
+        return $this->request('GET', '/internal/v1/plagiarism/capabilities');
+    }
+
     public function isConfigured(): bool
     {
         return filled(config('services.scitrace_ai.token'));

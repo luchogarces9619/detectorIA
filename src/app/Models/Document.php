@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Document extends Model
@@ -54,8 +55,9 @@ class Document extends Model
         return $this->hasMany(Analysis::class)->latest();
     }
 
-    public function latestAnalysis(): ?Analysis
+    /** @return HasOne<Analysis, $this> */
+    public function latestAnalysis(): HasOne
     {
-        return $this->analyses()->first();
+        return $this->hasOne(Analysis::class)->latestOfMany();
     }
 }

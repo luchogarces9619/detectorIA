@@ -381,7 +381,41 @@ El comando verifica el SHA-256, rechaza reutilizar una versión con otro artefac
 
 ## 11. Verificación ejecutada
 
-Se completa con la ejecución definitiva del corpus y del entrenamiento. No se declaran métricas hasta que exista el informe real.
+**Fecha:** 2026-10-25  
+**Artefacto:** `models/scitrace-es-v1/model.joblib`  
+**SHA-256:** `0b5d15a83b5b7578baf6d217ebd1ab056601a7fbe190a383d58a8b160a622cf5`  
+**Versión registrada:** 1.0.0 (`candidate`)
+
+### Corpus
+- Humano limpio: 862 resúmenes, 38 revistas, 100 % español (langid), licencias CC
+- Sintético: 811 textos (94,1 % cobertura), Qwen2.5-1.5B-Instruct Q4_K_M, filtro de artefactos simétrico
+- Pares emparejados: 811; particiones deterministas por revista (test 211 pares, 8 revistas no vistas)
+
+### Métricas de `test` (no usadas para ajustar)
+
+| Nivel | ROC AUC | PR AUC | Exactitud @ 0,5 | F1 @ 0,5 | Cobertura decisión | Exactitud decisión | Precisión decisión | Sensibilidad decisión | F1 decisión |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Fragmentos | 0,9968 | 0,9957 | 0,9714 | 0,9691 | 97,29 % | 0,9660 | 0,9350 | 0,9967 | 0,9649 |
+| Documentos | **0,9987** | **0,9987** | 0,9858 | 0,9857 | **97,16 %** | **0,9756** | **0,9543** | **1,0000** | **0,9766** |
+
+### Umbrales calibrados (isotónica, precisión objetivo 0,90)
+- `high = 0,25` (precisión 0,9265, recall 0,9767)
+- `low = 0,1538` (precisión 0,9793, recall 0,9342)
+- `valid = true`
+
+### Generalización OOD (Qwen2.5-0.5B-Instruct Q4_K_M, 140 pares test)
+- ROC AUC documentos: 0,9994
+- Exactitud decisión documentos: 0,9707
+- Cobertura: 97,50 %
+
+### Verificación de endpoint
+- `POST /internal/v1/detect` responde 200 con puntuaciones calibradas, conclusión (`review_suggested` / `no_signals` / `mixed_signals` / `not_conclusive`) y aviso legal.
+- Prueba en 10 pares `test` no vistos: 10/10 humanos → `human`, 10/10 IA → `ai`.
+
+### Suite de pruebas
+- Laravel: **68 pruebas, 238 aserciones** (Pint limpio)
+- FastAPI: **56 pasan, 1 omitida** (ruff limpio)
+- Entrenamiento: pruebas unitarias de umbrales y decisiones incluidas y pasan.
 
 ## 12. Errores comunes
 

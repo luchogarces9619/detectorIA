@@ -7,8 +7,8 @@
     </x-slot>
 
     <div class="space-y-6">
-        <x-ui.alert type="info" title="Fase 1: solo fundamentos">
-            La plataforma aún no recibe documentos ni ejecuta análisis. Este panel refleja únicamente usuarios y eventos reales del sistema.
+        <x-ui.alert type="success" title="Sistema operativo">
+            La plataforma está habilitada para carga de documentos, extracción, detección de IA y plagio.
         </x-ui.alert>
 
         <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Indicadores administrativos">

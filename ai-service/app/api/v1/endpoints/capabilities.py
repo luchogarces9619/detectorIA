@@ -34,11 +34,9 @@ def capabilities(request: Request) -> CapabilitiesResponse:
         )
 
     limitations = [
-        "El resultado del detector es orientativo y no demuestra autoría.",
-        "El modelo se entrenó con resúmenes académicos en español y no cubre "
-        "todos los géneros ni todos los generadores.",
-        "Fuera de su dominio de entrenamiento el sistema debe devolver "
-        "not_conclusive.",
+        "Los resultados son orientativos y no constituyen prueba fehaciente.",
+        "El análisis cuantitativo de plagio se basa en comparación interna y similitud textual.",
+        "El modelo de IA se entrenó con resúmenes académicos en español.",
         "La extracción no garantiza que todo PDF escaneado pueda procesarse sin OCR.",
     ]
 

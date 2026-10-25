@@ -104,6 +104,51 @@ function extractionPayload(): array
 }
 
 /**
+ * @return array<string, mixed>
+ */
+function detectionPayload(): array
+{
+    return [
+        'model' => [
+            'name' => 'scitrace-es-academic-detector',
+            'version' => '1.0.0',
+            'artifact_sha256' => str_repeat('e', 64),
+            'high_threshold' => 0.25,
+            'low_threshold' => 0.15,
+        ],
+        'document' => [
+            'aggregate_score' => 0.2,
+            'conclusion' => 'no_signals',
+            'confidence' => 'medium',
+            'coverage' => 1.0,
+            'decided' => 2,
+            'abstained' => 0,
+        ],
+        'segments' => [
+            [
+                'index' => 0,
+                'score' => 0.1,
+                'label' => 'human',
+                'confidence' => 'high',
+                'requires_review' => false,
+                'word_count' => 4,
+                'chunk_count' => 1,
+            ],
+            [
+                'index' => 1,
+                'score' => 0.15,
+                'label' => 'human',
+                'confidence' => 'high',
+                'requires_review' => false,
+                'word_count' => 5,
+                'chunk_count' => 1,
+            ],
+        ],
+        'disclaimer' => 'Resultado orientativo para revisión humana.',
+    ];
+}
+
+/**
  * @return array{document: Document, client: MockInterface}
  */
 function documentWithStoredFile(string $contents = 'contenido original'): array
@@ -131,6 +176,11 @@ it('persiste secciones y fragmentos y marca el documento como listo', function (
         ->once()
         ->with($document->original_name, 'contenido original', $document->mime_type)
         ->andReturn(extractionPayload());
+
+    $client->shouldReceive('detectText')
+        ->once()
+        ->withAnyArgs()
+        ->andReturn(detectionPayload());
 
     (new ProcessDocument($document->getKey()))->handle($client);
 
@@ -191,6 +241,7 @@ it('reemplaza secciones y fragmentos al reprocesar', function () {
     ]);
 
     $client->shouldReceive('extractDocument')->once()->andReturn(extractionPayload());
+    $client->shouldReceive('detectText')->once()->withAnyArgs()->andReturn(detectionPayload());
 
     (new ProcessDocument($document->getKey()))->handle($client);
 

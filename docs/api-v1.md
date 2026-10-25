@@ -119,18 +119,16 @@ Solicitud:
 }
 ```
 
-Respuesta:
-
-Los valores numéricos de este ejemplo son ilustrativos. El SHA-256, los umbrales y la versión provienen del `card.json` del artefacto cargado y se sustituyen por los reales en la verificación de la Fase 3.
+Respuesta (valores reales del artefacto v1.0.0):
 
 ```json
 {
   "model": {
     "name": "scitrace-es-academic-detector",
     "version": "1.0.0",
-    "artifact_sha256": "…",
-    "high_threshold": 0.81,
-    "low_threshold": 0.19
+    "artifact_sha256": "0b5d15a83b5b7578baf6d217ebd1ab056601a7fbe190a383d58a8b160a622cf5",
+    "high_threshold": 0.25,
+    "low_threshold": 0.1538
   },
   "document": {
     "aggregate_score": 0.62,

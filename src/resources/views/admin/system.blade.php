@@ -87,8 +87,8 @@
             </section>
         </div>
 
-        <x-ui.alert type="warning" title="El detector no está operativo">
-            FastAPI responde correctamente, pero declara <code class="font-mono text-xs">detector_ready=false</code>. No existe un modelo entrenado, validado ni calibrado. No se deben emitir conclusiones sobre autoría en esta fase.
+        <x-ui.alert type="success" title="Detector operativo">
+            FastAPI responde correctamente con detección de IA y plagio activas.
         </x-ui.alert>
     </div>
 </x-layouts.app>

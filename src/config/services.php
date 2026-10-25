@@ -41,6 +41,8 @@ return [
         'timeout' => (int) env('AI_TIMEOUT_SECONDS', 5),
         'connect_timeout' => (int) env('AI_CONNECT_TIMEOUT_SECONDS', 2),
         'extraction_timeout' => (int) env('AI_EXTRACTION_TIMEOUT_SECONDS', 120),
+        'detection_timeout' => (int) env('AI_DETECTION_TIMEOUT_SECONDS', 60),
+        'llm_timeout' => (int) env('AI_LLM_TIMEOUT_SECONDS', 60),
     ],
 
 ];

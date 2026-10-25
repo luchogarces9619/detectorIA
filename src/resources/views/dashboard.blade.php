@@ -11,10 +11,10 @@
             <div class="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full bg-aqua-500/15 blur-3xl"></div>
             <div class="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
                 <div class="max-w-2xl">
-                    <x-ui.badge tone="aqua" class="border border-aqua-400/20 bg-aqua-400/10 text-aqua-300">Fase 2 · Gestión documental</x-ui.badge>
+                    <x-ui.badge tone="success" class="border border-emerald-400/20 bg-emerald-400/10 text-emerald-300">Fase 3 · Detector calibrado</x-ui.badge>
                     <h2 class="mt-4 text-2xl font-bold tracking-tight sm:text-3xl">Bienvenido, {{ auth()->user()->name }}</h2>
                     <p class="mt-2 text-sm leading-relaxed text-navy-200">
-                        Ya puedes cargar documentos académicos en almacenamiento privado, extraer su texto y segmentarlo por secciones. El detector calibrado se incorporará en las fases 3 y 4.
+                        Detector calibrado scitrace-es-academic-detector v1.0.0 operativo. Detección de IA con umbrales calibrados y análisis cuantitativo de plagio disponibles.
                     </p>
                     <div class="mt-5 flex flex-wrap gap-3">
                         <a href="{{ route('documents.upload') }}" class="btn-primary">Cargar documento</a>
@@ -26,10 +26,10 @@
                 <div class="shrink-0 rounded-xl border border-white/10 bg-white/5 px-5 py-4 text-sm">
                     <p class="text-xs font-semibold uppercase tracking-[0.16em] text-navy-300">Motor de análisis</p>
                     <p class="mt-1.5 flex items-center gap-2 font-semibold text-white">
-                        <span class="h-2 w-2 rounded-full bg-amber-400"></span>
-                        Aún no operativo
+                        <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+                        Operativo
                     </p>
-                    <p class="mt-1 text-xs text-navy-300">Sin modelo entrenado ni calibrado</p>
+                    <p class="mt-1 text-xs text-navy-300">Modelo calibrado v1.0.0</p>
                 </div>
             </div>
         </section>
@@ -150,21 +150,21 @@
                         </div>
                     </div>
                     <div class="flex items-start gap-3">
-                        <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
-                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5"/></svg>
+                        <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>
                         </span>
                         <div>
                             <p class="text-sm font-medium text-slate-900">Gestión documental</p>
-                            <p class="text-xs leading-relaxed text-slate-500">Carga privada, extracción DOCX/PDF, OCR opcional y segmentación. Implementada; verificación en Docker pendiente.</p>
+                            <p class="text-xs leading-relaxed text-slate-500">Carga privada, extracción DOCX/PDF, OCR opcional y segmentación.</p>
                         </div>
                     </div>
                     <div class="flex items-start gap-3">
-                        <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500">
-                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/></svg>
+                        <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>
                         </span>
                         <div>
                             <p class="text-sm font-medium text-slate-900">Detector calibrado</p>
-                            <p class="text-xs leading-relaxed text-slate-500">Entrenamiento, evaluación y umbrales. Fases 3 y 4.</p>
+                            <p class="text-xs leading-relaxed text-slate-500">Entrenamiento, evaluación, umbrales y abstención. Operativo.</p>
                         </div>
                     </div>
 

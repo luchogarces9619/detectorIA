@@ -2,11 +2,18 @@
 
 namespace App\Jobs;
 
+use App\Enums\AnalysisConclusion;
+use App\Enums\AnalysisStatus;
+use App\Enums\ConfidenceLevel;
 use App\Enums\DocumentStatus;
 use App\Enums\SectionType;
 use App\Enums\SegmentKind;
+use App\Enums\SegmentLabel;
+use App\Models\Analysis;
 use App\Models\Document;
 use App\Models\DocumentSection;
+use App\Models\ModelVersion;
+use App\Models\SegmentPrediction;
 use App\Models\TextSegment;
 use App\Services\Ai\AiServiceClient;
 use App\Services\Ai\AiServiceException;
@@ -94,6 +101,38 @@ class ProcessDocument implements ShouldQueue
                 'persistence_failed',
                 'No se pudo guardar la extracción del documento.',
             );
+
+            return;
+        }
+
+        try {
+            $this->runDetection($document, $client);
+        } catch (AiServiceException $exception) {
+            if ($exception->statusCode === 503) {
+                Log::warning('Detector no disponible; análisis omitido.', [
+                    'document_id' => $document->getKey(),
+                    'reason' => $exception->getMessage(),
+                ]);
+            } else {
+                Log::error('Error en detección de IA.', [
+                    'document_id' => $document->getKey(),
+                    'error' => $exception->getMessage(),
+                ]);
+            }
+        } catch (Throwable $exception) {
+            Log::error('Error inesperado en detección de IA.', [
+                'document_id' => $document->getKey(),
+                'error' => $exception->getMessage(),
+            ]);
+        }
+
+        try {
+            $this->runPlagiarism($document, $client);
+        } catch (Throwable $exception) {
+            Log::error('Error en detección de plagio.', [
+                'document_id' => $document->getKey(),
+                'error' => $exception->getMessage(),
+            ]);
         }
     }
 
@@ -390,5 +429,200 @@ class ProcessDocument implements ShouldQueue
         app(AuditLogger::class)->log('document.processing_failed', subject: $document, metadata: [
             'code' => mb_substr($code, 0, 50),
         ]);
+    }
+
+    /**
+     * Ejecuta la detección de IA sobre los segmentos no excluidos del documento.
+     */
+    private function runDetection(Document $document, AiServiceClient $client): void
+    {
+        $segments = TextSegment::query()
+            ->where('document_id', $document->getKey())
+            ->where('is_excluded', false)
+            ->orderBy('position')
+            ->get(['id', 'text', 'word_count']);
+
+        if ($segments->isEmpty()) {
+            Log::info('No hay segmentos analizables para detección.', [
+                'document_id' => $document->getKey(),
+            ]);
+
+            return;
+        }
+
+        $segmentInputs = $segments->map(fn (TextSegment $s) => [
+            'text' => $s->text,
+            'segment_id' => (string) $s->getKey(),
+        ])->toArray();
+
+        try {
+            $detection = $client->detectText($segmentInputs, (string) $document->getKey());
+        } catch (AiServiceException $exception) {
+            if ($exception->statusCode === 503) {
+                Log::warning('Detector no disponible; análisis omitido.', [
+                    'document_id' => $document->getKey(),
+                    'reason' => $exception->getMessage(),
+                ]);
+            } else {
+                Log::error('Error en detección de IA.', [
+                    'document_id' => $document->getKey(),
+                    'error' => $exception->getMessage(),
+                ]);
+            }
+
+            return;
+        } catch (Throwable $exception) {
+            Log::error('Error inesperado en detección de IA.', [
+                'document_id' => $document->getKey(),
+                'error' => $exception->getMessage(),
+            ]);
+
+            return;
+        }
+
+        if (! is_array($detection)) {
+            Log::warning('Respuesta de detección inválida; análisis omitido.', [
+                'document_id' => $document->getKey(),
+            ]);
+
+            return;
+        }
+
+        $model = $detection['model'] ?? [];
+        $docResult = $detection['document'] ?? [];
+        $segmentResults = $detection['segments'] ?? [];
+
+        if (! is_array($segmentResults) || count($segmentResults) === 0) {
+            Log::warning('Sin resultados de segmentos en detección; análisis omitido.', [
+                'document_id' => $document->getKey(),
+            ]);
+
+            return;
+        }
+
+        $modelVersion = $this->resolveModelVersion($model);
+
+        $analysis = Analysis::create([
+            'document_id' => $document->getKey(),
+            'user_id' => $document->user_id,
+            'model_version_id' => $modelVersion?->getKey(),
+            'engine_version' => $model['version'] ?? '1.0.0',
+            'document_sha256' => $document->sha256,
+            'status' => AnalysisStatus::Completed,
+            'confidence' => ConfidenceLevel::tryFrom($docResult['confidence'] ?? 'insufficient') ?? ConfidenceLevel::Insufficient,
+            'conclusion' => AnalysisConclusion::tryFrom($docResult['conclusion'] ?? 'not_conclusive') ?? AnalysisConclusion::NotConclusive,
+            'aggregate_score' => is_numeric($docResult['aggregate_score'] ?? null) ? (float) $docResult['aggregate_score'] : null,
+            'summary' => [
+                'coverage' => is_numeric($docResult['coverage'] ?? null) ? (float) $docResult['coverage'] : 0.0,
+                'decided' => is_int($docResult['decided'] ?? null) ? (int) $docResult['decided'] : 0,
+                'abstained' => is_int($docResult['abstained'] ?? null) ? (int) $docResult['abstained'] : 0,
+            ],
+            'parameters' => [
+                'high_threshold' => is_numeric($model['high_threshold'] ?? null) ? (float) $model['high_threshold'] : null,
+                'low_threshold' => is_numeric($model['low_threshold'] ?? null) ? (float) $model['low_threshold'] : null,
+            ],
+            'started_at' => now(),
+            'completed_at' => now(),
+            'progress' => 100,
+        ]);
+
+        foreach ($segmentResults as $index => $result) {
+            $segment = $segments[$index] ?? null;
+            if ($segment === null) {
+                continue;
+            }
+
+            SegmentPrediction::create([
+                'analysis_id' => $analysis->getKey(),
+                'segment_id' => $segment->getKey(),
+                'model_version_id' => $modelVersion?->getKey(),
+                'score' => is_numeric($result['score'] ?? null) ? (float) $result['score'] : 0.5,
+                'label' => SegmentLabel::tryFrom($result['label'] ?? 'uncertain') ?? SegmentLabel::Uncertain,
+                'confidence' => ConfidenceLevel::tryFrom($result['confidence'] ?? 'insufficient') ?? ConfidenceLevel::Insufficient,
+                'requires_review' => (bool) ($result['requires_review'] ?? true),
+                'indicators' => [
+                    'word_count' => is_int($result['word_count'] ?? null) ? (int) $result['word_count'] : $segment->word_count,
+                    'chunk_count' => is_int($result['chunk_count'] ?? null) ? (int) $result['chunk_count'] : 0,
+                ],
+            ]);
+        }
+
+        $document->forceFill([
+            'metadata' => array_merge($document->metadata ?? [], [
+                'analysis' => [
+                    'conclusion' => $analysis->conclusion->value,
+                    'confidence' => $analysis->confidence->value,
+                    'aggregate_score' => $analysis->aggregate_score,
+                    'analyzed_at' => now()->toIso8601String(),
+                    'model_version' => $modelVersion?->version ?? 'unknown',
+                ],
+            ]),
+        ])->save();
+
+        app(AuditLogger::class)->log('document.analyzed', subject: $document, metadata: [
+            'analysis_id' => (string) $analysis->getKey(),
+            'conclusion' => $analysis->conclusion->value,
+            'confidence' => $analysis->confidence->value,
+        ]);
+    }
+
+    /**
+     * Ejecuta la detección de plagio sobre el documento.
+     */
+    private function runPlagiarism(Document $document, AiServiceClient $client): void
+    {
+        $segments = TextSegment::query()
+            ->where('document_id', $document->getKey())
+            ->where('is_excluded', false)
+            ->orderBy('position')
+            ->get(['id', 'text', 'word_count']);
+
+        if ($segments->isEmpty()) {
+            return;
+        }
+
+        $fullText = $segments->pluck('text')->implode(' ');
+        $segmentTexts = $segments->pluck('text')->toArray();
+
+        try {
+            $plagiarism = $client->plagiarismDetect($fullText, $segmentTexts);
+        } catch (Throwable) {
+            return;
+        }
+
+        if (! is_array($plagiarism)) {
+            return;
+        }
+
+        $document->forceFill([
+            'metadata' => array_merge($document->metadata ?? [], [
+                'plagiarism' => [
+                    'score' => $plagiarism['score'] ?? 0.0,
+                    'percentage' => $plagiarism['percentage'] ?? 0.0,
+                    'total_matches' => $plagiarism['total_matches'] ?? 0,
+                    'summary' => $plagiarism['summary'] ?? '',
+                    'matches' => $plagiarism['matches'] ?? [],
+                    'fragments_analyzed' => $plagiarism['fragments_analyzed'] ?? 0,
+                    'fragments_matched' => $plagiarism['fragments_matched'] ?? 0,
+                    'analyzed_at' => now()->toIso8601String(),
+                ],
+            ]),
+        ])->save();
+    }
+
+    /**
+     * Intenta resolver la versión del modelo desde la base de datos por SHA-256.
+     */
+    private function resolveModelVersion(array $model): ?ModelVersion
+    {
+        $sha256 = $model['artifact_sha256'] ?? null;
+
+        if (! is_string($sha256) || $sha256 === '') {
+            return null;
+        }
+
+        return ModelVersion::query()
+            ->where('artifact_sha256', $sha256)
+            ->first();
     }
 }

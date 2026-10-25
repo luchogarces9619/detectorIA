@@ -19,6 +19,38 @@ class DocumentDetail extends Component
         $this->document = $document;
     }
 
+    public function getProcessingProgressProperty(): array
+    {
+        $metadata = is_array($this->document->metadata) ? $this->document->metadata : [];
+        $hasExtraction = isset($metadata['extraction']);
+        $hasAnalysis = isset($metadata['analysis']);
+        $hasPlagiarism = isset($metadata['plagiarism']);
+
+        if ($this->document->status === DocumentStatus::Ready && $hasExtraction && $hasAnalysis && $hasPlagiarism) {
+            return ['percent' => 100, 'stage' => 'Completado', 'details' => 'Extracción, detección de IA y plagio finalizados'];
+        }
+        if ($this->document->status === DocumentStatus::Ready && $hasExtraction && $hasAnalysis && ! $hasPlagiarism) {
+            return ['percent' => 85, 'stage' => 'Detección de plagio', 'details' => 'Detección de IA completada, ejecutando plagio'];
+        }
+        if ($this->document->status === DocumentStatus::Ready && $hasExtraction && ! $hasAnalysis && $hasPlagiarism) {
+            return ['percent' => 85, 'stage' => 'Detección de IA', 'details' => 'Plagio completado, ejecutando detección de IA'];
+        }
+        if ($this->document->status === DocumentStatus::Ready && $hasExtraction && ! $hasAnalysis && ! $hasPlagiarism) {
+            return ['percent' => 70, 'stage' => 'Análisis', 'details' => 'Extracción completada, ejecutando análisis'];
+        }
+        if ($this->document->status === DocumentStatus::Processing) {
+            return ['percent' => 40, 'stage' => 'Procesando', 'details' => 'Extracción y análisis en curso'];
+        }
+        if (in_array($this->document->status, [DocumentStatus::Uploaded, DocumentStatus::Validating], true)) {
+            return ['percent' => 15, 'stage' => 'En cola', 'details' => 'Esperando procesamiento'];
+        }
+        if ($this->document->status === DocumentStatus::Failed) {
+            return ['percent' => 0, 'stage' => 'Error', 'details' => $this->document->failure_message ?? 'Error en procesamiento'];
+        }
+
+        return ['percent' => 0, 'stage' => $this->document->status->label(), 'details' => ''];
+    }
+
     public function reprocess(): void
     {
         $this->authorize('reprocess', $this->document);
@@ -65,7 +97,12 @@ class DocumentDetail extends Component
     {
         $this->authorize('view', $this->document);
         $this->document->refresh();
-        $this->document->load(['sections', 'segments']);
+        $this->document->load([
+            'sections',
+            'segments',
+            'latestAnalysis.predictions.segment',
+            'latestAnalysis.modelVersion',
+        ]);
 
         return view('livewire.documents.document-detail');
     }

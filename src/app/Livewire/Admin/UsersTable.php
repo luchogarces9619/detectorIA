@@ -7,6 +7,7 @@ use App\Enums\UserStatus;
 use App\Models\User;
 use App\Services\Audit\AuditLogger;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -19,6 +20,15 @@ class UsersTable extends Component
     public string $roleFilter = '';
 
     public string $statusFilter = '';
+
+    public bool $showCreateModal = false;
+
+    public string $newName = '';
+    public string $newEmail = '';
+    public string $newPassword = '';
+    public string $newRole = 'user';
+    public string $newPlan = 'free';
+    public int $newLimit = 5;
 
     protected string $paginationTheme = 'tailwind';
 
@@ -102,6 +112,67 @@ class UsersTable extends Component
         ]);
 
         session()->flash('admin_status', 'Rol del usuario actualizado.');
+    }
+
+    public function updateSubscription(string $userId, string $plan, int $limit, int $uploadsUsed): void
+    {
+        $user = User::query()->findOrFail($userId);
+        $user->subscription_plan = $plan;
+        $user->upload_limit = max(0, $limit);
+        $user->uploads_used = max(0, $uploadsUsed);
+        $user->can_upload = $user->uploads_used < $user->upload_limit || $user->upload_limit == 0 ? ($user->upload_limit != 0 || true) : true;
+        if ($user->upload_limit > 0 && $user->uploads_used >= $user->upload_limit) {
+            $user->can_upload = false;
+        } else {
+            $user->can_upload = true;
+        }
+        $user->save();
+
+        app(AuditLogger::class)->log('admin.user.subscription_updated', subject: $user, metadata: [
+            'plan' => $plan,
+            'limit' => $limit,
+            'uploads_used' => $uploadsUsed,
+        ]);
+
+        session()->flash('admin_status', 'Suscripción actualizada.');
+    }
+
+    public function createUser(): void
+    {
+        $this->validate([
+            'newName' => ['required', 'string', 'max:255'],
+            'newEmail' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'newPassword' => ['required', 'string', 'min:8'],
+            'newRole' => ['required', 'in:user,admin'],
+        ]);
+
+        $user = User::create([
+            'name' => $this->newName,
+            'email' => $this->newEmail,
+            'password' => Hash::make($this->newPassword),
+            'role' => UserRole::tryFrom($this->newRole) ?? UserRole::User,
+            'status' => UserStatus::Active,
+            'subscription_plan' => $this->newPlan,
+            'upload_limit' => $this->newLimit,
+            'uploads_used' => 0,
+            'can_upload' => true,
+        ]);
+
+        app(AuditLogger::class)->log('admin.user.created', subject: $user);
+
+        $this->reset(['newName', 'newEmail', 'newPassword', 'newRole', 'newPlan', 'newLimit', 'showCreateModal']);
+        session()->flash('admin_status', 'Usuario creado correctamente.');
+        $this->resetPage();
+    }
+
+    public function openCreateModal(): void
+    {
+        $this->showCreateModal = true;
+    }
+
+    public function closeCreateModal(): void
+    {
+        $this->showCreateModal = false;
     }
 
     public function render()

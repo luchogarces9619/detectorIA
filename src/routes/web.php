@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\DocumentDownloadController;
+use App\Http\Controllers\DocumentReportController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard')->name('home');
@@ -31,6 +32,7 @@ Route::middleware(['auth', 'active'])->group(function (): void {
     Route::view('/documents/upload', 'documents.upload')->name('documents.upload');
     Route::get('/documents/{document}', [DocumentController::class, 'show'])->name('documents.show');
     Route::get('/documents/{document}/download', DocumentDownloadController::class)->name('documents.download');
+    Route::get('/documents/{document}/report/pdf', [DocumentReportController::class, 'pdf'])->name('documents.report.pdf');
 
     Route::view('/profile', 'profile.edit')->name('profile.edit');
 });

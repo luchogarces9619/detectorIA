@@ -42,6 +42,19 @@ class Settings(BaseSettings):
     ocr_dpi: int = Field(default=200, ge=100, le=400)
     min_text_chars_per_page: int = Field(default=20, ge=0, le=10_000)
 
+    # LLM integration (free providers)
+    llm_enabled: bool = False
+    llm_provider: Literal["openrouter", "ollama", "groq", "none"] = "none"
+    llm_base_url: str | None = None
+    llm_api_key: SecretStr | None = None
+    llm_model: str | None = None
+    llm_timeout_seconds: int = 60
+
+    # Plagiarism detection
+    plagiarism_enabled: bool = True
+    plagiarism_min_length: int = 50
+    plagiarism_threshold: float = 0.85
+
     @field_validator("internal_token")
     @classmethod
     def token_must_be_strong(cls, value: SecretStr) -> SecretStr:

@@ -25,6 +25,11 @@ class User extends Authenticatable
         'status',
         'locale',
         'last_login_at',
+        'subscription_plan',
+        'upload_limit',
+        'uploads_used',
+        'subscription_expires_at',
+        'can_upload',
     ];
 
     protected $hidden = [
@@ -37,9 +42,13 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'last_login_at' => 'datetime',
+            'subscription_expires_at' => 'datetime',
             'password' => 'hashed',
             'role' => UserRole::class,
             'status' => UserStatus::class,
+            'upload_limit' => 'integer',
+            'uploads_used' => 'integer',
+            'can_upload' => 'boolean',
         ];
     }
 

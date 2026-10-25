@@ -2,7 +2,7 @@
 
 Plataforma web para el análisis **orientativo** de escritura académica en español. SciTrace AI organiza documentos, extrae y segmenta su texto y, en fases posteriores, aplicará un detector calibrado. Los resultados **no constituyen prueba de autoría ni un porcentaje definitivo de texto generado por IA**.
 
-Este repositorio contiene las **Fases 1 y 2**. La Fase 1 entrega los fundamentos (autenticación, roles, infraestructura, comunicación Laravel ↔ FastAPI). La Fase 2 añade la carga privada de documentos, la extracción de texto y la segmentación. **Todavía no existe un detector entrenado.**
+Este repositorio contiene las **Fases 1, 2 y 3**. La Fase 1 entrega los fundamentos (autenticación, roles, infraestructura, comunicación Laravel ↔ FastAPI). La Fase 2 añade la carga privada de documentos, la extracción de texto y la segmentación. La Fase 3 entrega un **detector calibrado** con métricas reales sobre particiones no vistas.
 
 ## Estado actual
 
@@ -15,16 +15,16 @@ Este repositorio contiene las **Fases 1 y 2**. La Fase 1 entrega los fundamentos
 | Extracción DOCX (`python-docx`) y PDF (`PyMuPDF`) | Implementado y verificado con servicios reales |
 | OCR con Tesseract | Implementado y verificado con Tesseract 5.4.0 + `spa+eng` |
 | Segmentación, exclusión de tablas/referencias y offsets | Implementado y verificado |
-| Laravel + Pest | **64 pruebas, 221 aserciones** en SQLite y en PostgreSQL 18.6 |
-| FastAPI + pytest | **30 pasan** con Tesseract; **29 + 1 omitida** sin él; ruff limpio |
+| Laravel + Pest | **68 pruebas, 238 aserciones** en SQLite y en PostgreSQL 18.6 |
+| FastAPI + pytest | **56 pasan, 1 omitida** con Tesseract; ruff limpio |
 | Assets Vite/Tailwind | Compilados correctamente |
 | Comunicación Laravel ↔ FastAPI | Verificada en local con HTTP real y token interno |
 | PostgreSQL 18.6 | **Verificado**: 11 migraciones y suite completa con binarios nativos |
 | Dockerfiles y `docker-compose.yml` | Escritos; etiquetas de imagen verificadas |
 | Prueba de humo con contenedores | **Pendiente de entorno**: Docker no está instalado |
-| Detección de IA, informes PDF, retención | Fuera de la Fase 2 (Fases 3–6) |
+| **Detector de IA (Fase 3)** | **Entrenado, calibrado y evaluado**: ROC AUC 0,9987 (docs), 0,9994 (OOD) |
 
-La tabla anterior es deliberada: nada que no se haya ejecutado se presenta como verificado. Ver [docs/phase-1-checklist.md](docs/phase-1-checklist.md) y [docs/phase-2.md](docs/phase-2.md).
+La tabla anterior es deliberada: nada que no se haya ejecutado se presenta como verificado. Ver [docs/phase-1-checklist.md](docs/phase-1-checklist.md), [docs/phase-2.md](docs/phase-2.md) y [docs/phase-3.md](docs/phase-3.md).
 
 ## Qué hace hoy
 
@@ -35,7 +35,7 @@ La tabla anterior es deliberada: nada que no se haya ejecutado se presenta como 
 - Panel de usuario, edición de perfil y panel administrativo de usuarios.
 - Cambio de rol y suspensión de cuentas con protecciones básicas.
 - Endpoint de salud de Laravel (`/api/v1/health`, `/up`).
-- Microservicio FastAPI con `/health`, `/internal/v1/health`, `/internal/v1/capabilities` y `/internal/v1/documents/extract`.
+- Microservicio FastAPI con `/health`, `/internal/v1/health`, `/internal/v1/capabilities`, `/internal/v1/documents/extract` y **`/internal/v1/detect`**.
 - Autenticación entre servicios mediante `X-Internal-Token`.
 - Auditoría de eventos de autenticación, administración y documentos.
 - Carga privada de DOCX/PDF con límite de tamaño, validación de firma real y consentimiento.
@@ -43,14 +43,16 @@ La tabla anterior es deliberada: nada que no se haya ejecutado se presenta como 
 - Detalle del documento con métricas, contenido extraído y ficha técnica.
 - Listado, descarga autorizada, reprocesamiento y eliminación.
 - Esquema completo para documentos, secciones, segmentos, análisis, predicciones, informes y versiones de modelo.
+- **Detección orientativa de IA en texto académico en español** con umbrales calibrados y abstención (`not_conclusive`).
+- **Evaluación OOD** con generador distinto (Qwen2.5-0.5B) que confirma generalización.
 
 ## Qué no hace todavía
 
-- No clasifica texto ni calcula probabilidades de IA.
 - No genera informes PDF.
 - No ejecuta purgas de retención.
-- No entrena modelos con documentos de usuarios.
+- No entrena modelos con documentos de usuarios (requiere autorización explícita LOPDP).
 - No permite que los administradores lean el contenido documental.
+- No orquesta el análisis automático de documentos subidos (Fase 4).
 - No se ha verificado dentro de contenedores Docker; PostgreSQL y OCR sí se verificaron de forma nativa.
 
 ## Requisitos en Windows
@@ -203,6 +205,6 @@ detector IA/
 
 ## Siguiente fase
 
-La Fase 2 está **cerrada funcionalmente**: suites en SQLite y PostgreSQL 18.6, OCR real, job completo y flujo E2E en navegador. Queda una deuda de entorno antes de desplegar: construir y ejecutar los contenedores Docker (`scripts/bootstrap.ps1` y `scripts/verify.ps1`). Ver [docs/phase-2.md](docs/phase-2.md#16-cierre-de-la-fase-y-transición).
+La Fase 3 está **completa**: corpus real (862 humanos + 811 sintéticos), modelo TF-IDF + Regresión Logística calibrado, umbrales con abstención validados, evaluación OOD exitosa, artefacto versionado y registrado en Laravel. Ver [docs/phase-3.md](docs/phase-3.md) e [informe del modelo](docs/phase-3-model-report.md).
 
-La Fase 3 (detector calibrado) puede comenzar sobre esta base. Ningún resultado se presentará como validado hasta que exista un modelo entrenado, calibrado y evaluado; el sistema seguirá devolviendo `not_conclusive` cuando no haya evidencia suficiente.
+La Fase 4 conectará el detector con la interfaz: orquestación del análisis, almacenamiento de predicciones, explicaciones por fragmento y revisión humana.
